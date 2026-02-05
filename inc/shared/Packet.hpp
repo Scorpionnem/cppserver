@@ -6,7 +6,7 @@
 /*   By: mbatty <mbatty@student.42angouleme.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/05 15:35:17 by mbatty            #+#    #+#             */
-/*   Updated: 2026/02/05 15:59:09 by mbatty           ###   ########.fr       */
+/*   Updated: 2026/02/05 18:08:54 by mbatty           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,4 +23,9 @@ struct Packet
 		size_t	id;
 	};
 	Header	hdr;
+};
+
+struct	IntPacket : public Packet
+{
+	int	v;
 };

@@ -14,8 +14,10 @@ LFLAGS :=
 
 INCLUDE_DIRS :=	inc/\
 				inc/shared\
+				inc/server\
 
 SRCS :=	server/main\
+		server/Server\
 
 ###
 

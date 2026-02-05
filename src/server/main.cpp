@@ -6,7 +6,7 @@
 /*   By: mbatty <mbatty@student.42angouleme.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/05 15:27:57 by mbatty            #+#    #+#             */
-/*   Updated: 2026/02/05 15:57:56 by mbatty           ###   ########.fr       */
+/*   Updated: 2026/02/05 18:08:51 by mbatty           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,55 +16,65 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "Server.hpp"
+#include <sys/signal.h>
 
-struct	IntPacket : public Packet
+int	g_sig = 0;
+
+void	handleSig(int sig)
 {
-	int	v;
-};
+	g_sig = sig;
+}
 
-int main()
+IntPacket	*intPacketMaker(int fd)
 {
-	int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-	if (serverSocket == -1)
-		std::cout << strerror(errno) << std::endl;
+	IntPacket	*res = new IntPacket();
 
-	int	yes = 1;
-	if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+	ssize_t	intPacketSize = sizeof(IntPacket) - sizeof(Packet::Header);
+	ssize_t	size = recv(fd, reinterpret_cast<char*>(res) + sizeof(Packet::Header), intPacketSize, 0);
+	if (size != intPacketSize)
 	{
-		close(serverSocket);
-		return (0);
+		std::cerr << "Invalid intpacket received" << std::endl;
+		delete res;
+		return (NULL);
 	}
+	return (res);
+}
 
-	sockaddr_in serverAddress;
-	serverAddress.sin_family = AF_INET;
-	serverAddress.sin_port = htons(8080);
-	serverAddress.sin_addr.s_addr = INADDR_ANY;
+int	main(void)
+{
+	signal(SIGINT, handleSig);
 
-	bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress));
-
-	listen(serverSocket, 5);
-
-	int clientSocket = accept(serverSocket, nullptr, nullptr);
-
-	void	*buffer[4096] = { 0 };
-	Packet	*packet = (Packet*)buffer;
-	size_t	size = recv(clientSocket, buffer, sizeof(Packet), 0);
-	if (size != sizeof(Packet))
-	{
-		std::cout << "Invalid packet received" << std::endl;
-	}
-	else
-	{
-		std::cout << "size " << packet->hdr.size << " id " << packet->hdr.id << std::endl;
-		if (packet->hdr.id == 1)
+	Server	server;
+	server.setPacketType(0, intPacketMaker);
+	server.setConnectCallback([]
+		(const Server::Client &client)
 		{
-			if (packet->hdr.size != sizeof(IntPacket))
-				std::cout << "Wrong intpacket size" << std::endl;
-			else
-				std::cout << "Intpacket" << std::endl;
-		}
-	}
+			std::cout << "Connect callback for client: " << client.fd() << std::endl;
+		});
+	server.setDisconnectCallback([]
+		(const Server::Client &client)
+		{
+			std::cout << "Disconnect callback for client: " << client.fd() << std::endl;
+		});
+	server.setMessageCallback([&server]
+		(const Server::Client &client, Packet *packet)
+		{
+			(void)server;
+			std::cout << "Message callback for client: " << client.fd() << std::endl;
+			if (packet->hdr.id == 0)
+			{
+				IntPacket	*pckt = (IntPacket*)packet;
+				std::cout << pckt->v << std::endl;
+			}
+		});
 
-	close(serverSocket);
-	return (0);
+	try {
+		server.open(6942);
+		while (g_sig == 0)
+			server.update();
+		server.close();
+	} catch (const std::exception &e) {
+		std::cerr << e.what() << std::endl;
+	}
 }

@@ -11,17 +11,18 @@ int main()
 
 	sockaddr_in serverAddress;
 	serverAddress.sin_family = AF_INET;
-	serverAddress.sin_port = htons(8080);
+	serverAddress.sin_port = htons(6942);
 	serverAddress.sin_addr.s_addr = INADDR_ANY;
 
 	connect(clientSocket, (struct sockaddr*)&serverAddress,
 			sizeof(serverAddress));
 
-	Packet	packet;
+	IntPacket	packet;
 
-	packet.hdr.id = 1;
-	packet.hdr.size = sizeof(Packet);
-	send(clientSocket, &packet, sizeof(Packet), 0);
+	packet.hdr.id = 0;
+	packet.hdr.size = sizeof(IntPacket);
+	packet.v = 6942;
+	send(clientSocket, &packet, sizeof(IntPacket), 0);
 
 	close(clientSocket);
 
