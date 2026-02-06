@@ -6,7 +6,7 @@
 /*   By: mbatty <mbatty@student.42angouleme.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/05 15:27:57 by mbatty            #+#    #+#             */
-/*   Updated: 2026/02/05 18:08:51 by mbatty           ###   ########.fr       */
+/*   Updated: 2026/02/06 13:09:23 by mbatty           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,46 +26,36 @@ void	handleSig(int sig)
 	g_sig = sig;
 }
 
-IntPacket	*intPacketMaker(int fd)
-{
-	IntPacket	*res = new IntPacket();
-
-	ssize_t	intPacketSize = sizeof(IntPacket) - sizeof(Packet::Header);
-	ssize_t	size = recv(fd, reinterpret_cast<char*>(res) + sizeof(Packet::Header), intPacketSize, 0);
-	if (size != intPacketSize)
-	{
-		std::cerr << "Invalid intpacket received" << std::endl;
-		delete res;
-		return (NULL);
-	}
-	return (res);
-}
-
 int	main(void)
 {
 	signal(SIGINT, handleSig);
 
 	Server	server;
-	server.setPacketType(0, intPacketMaker);
+	server.setPacketType(0, IntPacket::size, IntPacket::create);
+	server.setPacketType(1, StringPacket::size, StringPacket::create);
 	server.setConnectCallback([]
 		(const Server::Client &client)
 		{
-			std::cout << "Connect callback for client: " << client.fd() << std::endl;
+			(void)client;
 		});
 	server.setDisconnectCallback([]
 		(const Server::Client &client)
 		{
-			std::cout << "Disconnect callback for client: " << client.fd() << std::endl;
+			(void)client;
 		});
 	server.setMessageCallback([&server]
 		(const Server::Client &client, Packet *packet)
 		{
-			(void)server;
-			std::cout << "Message callback for client: " << client.fd() << std::endl;
+			(void)server;(void)client;
 			if (packet->hdr.id == 0)
 			{
 				IntPacket	*pckt = (IntPacket*)packet;
 				std::cout << pckt->v << std::endl;
+			}
+			if (packet->hdr.id == 1)
+			{
+				StringPacket	*pckt = (StringPacket*)packet;
+				std::cout << pckt->msg << std::endl;
 			}
 		});
 

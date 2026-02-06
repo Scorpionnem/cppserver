@@ -6,7 +6,7 @@
 /*   By: mbatty <mbatty@student.42angouleme.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/05 17:28:35 by mbatty            #+#    #+#             */
-/*   Updated: 2026/02/05 18:06:28 by mbatty           ###   ########.fr       */
+/*   Updated: 2026/02/06 12:59:00 by mbatty           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,9 +87,9 @@ class	Server
 				throw std::runtime_error("Failed to send message to fd " + std::to_string(client.fd()));
 		}
 
-		void	setPacketType(int id, std::function<Packet*(int)> func) {_packetTypes[id] = func;}
+		void	setPacketType(int id, std::function<size_t()> sizeFunc, std::function<Packet*()> createFunc) {_packetTypes[id] = std::make_pair(sizeFunc, createFunc);}
 	private:
-		void		_processInput(Server::Client &client, Packet &packet);
+		void		_processInput(Server::Client &client, Packet::Header &header);
 		void		_refreshPoll();
 		void 		_recvClients();
 		void		_addNewClient();
@@ -103,5 +103,5 @@ class	Server
 		std::function<void(const Server::Client &)>							_onDisconnect = NULL;
 		std::function<void(const Server::Client &, Packet *)>	_onMessage = NULL;
 		
-		std::map<int, std::function<Packet*(int)>>						_packetTypes;
+		std::map<int, std::pair<std::function<size_t()>, std::function<Packet*()>>>						_packetTypes;
 };

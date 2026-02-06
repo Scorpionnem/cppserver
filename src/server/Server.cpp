@@ -16,24 +16,50 @@ void	Server::update()
 	_recvClients();
 }
 
-void	Server::_processInput(Server::Client &client, Packet &packet)
+/*
+IntPacket	*intPacketMaker(int fd)
 {
-	std::cout << "Size: " << packet.hdr.size << " Id: " << packet.hdr.id << std::endl;
+	IntPacket	*res = new IntPacket();
 
-	auto find = _packetTypes.find(packet.hdr.id);
+	ssize_t	intPacketSize = sizeof(IntPacket) - sizeof(Packet::Header);
+	ssize_t	size = recv(fd, reinterpret_cast<char*>(res) + sizeof(Packet::Header), intPacketSize, 0);
+	if (size != intPacketSize)
+	{
+		std::cerr << "Invalid intpacket received" << std::endl;
+		delete res;
+		return (NULL);
+	}
+	return (res);
+}
+*/
+
+void	Server::_processInput(Server::Client &client, Packet::Header &header)
+{
+	std::cout << "Received packet with Id: " << header.id << std::endl;
+
+	auto find = _packetTypes.find(header.id);
 	if (find == _packetTypes.end())
 	{
 		std::cerr << "Packet id not found" << std::endl;
 		return ;
 	}
-	auto func = find->second;
+	auto	funcs = find->second;
+	auto	createFunc = funcs.second;
+	auto	sizeFunc = funcs.first;
 
-	Packet	*fullPacket = func(client.fd());
-	if (!fullPacket)
+	Packet	*fullPacket = createFunc();
+
+	ssize_t	payloadSize = sizeFunc() - sizeof(Packet::Header);
+	ssize_t	size = recv(client.fd(), reinterpret_cast<char*>(fullPacket) + sizeof(Packet::Header), payloadSize, 0);
+
+	if (size != payloadSize)
+	{
+		std::cerr << "Invalid packet payload received" << std::endl;
+		delete fullPacket;
 		return ;
+	}
 
-	fullPacket->hdr.id = packet.hdr.id;
-	fullPacket->hdr.size = packet.hdr.size;
+	fullPacket->hdr.id = header.id;
 
 	if (_onMessage)
 		_onMessage(client, fullPacket);
@@ -51,10 +77,10 @@ void Server::_recvClients()
 
 		if (_fds[i].revents & POLLIN)
 		{
-			Packet	packet;
-			ssize_t size;
+			Packet::Header	header;
+			ssize_t 		size;
 
-			size = recv(client.fd(), &packet, sizeof(Packet), 0);
+			size = recv(client.fd(), &header, sizeof(Packet::Header), 0);
 			if (size == 0 || size == -1)
 			{
 				if (_onDisconnect)
@@ -62,10 +88,10 @@ void Server::_recvClients()
 				it = _clients.erase(it);
 				goto skip_it;
 			}
-			if (size != sizeof(Packet))
-				std::cerr << "Invalid packet header size" << std::endl;
+			if (size != sizeof(Packet::Header))
+				std::cerr << "Invalid packet header size " << size << std::endl;
 			else
-				_processInput(client, packet);
+				_processInput(client, header);
 		}
 
 		++it;

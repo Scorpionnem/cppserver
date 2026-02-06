@@ -20,11 +20,17 @@ int main()
 	IntPacket	packet;
 
 	packet.hdr.id = 0;
-	packet.hdr.size = sizeof(IntPacket);
 	packet.v = 6942;
 	send(clientSocket, &packet, sizeof(IntPacket), 0);
+
+	StringPacket	spacket;
+
+	spacket.hdr.id = 1;
+	spacket.setMsg("message");
+	send(clientSocket, &spacket, sizeof(StringPacket), 0);
 
 	close(clientSocket);
 
 	return 0;
 }
+
