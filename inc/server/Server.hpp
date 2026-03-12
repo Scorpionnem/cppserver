@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.hpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mbatty <mbatty@student.42angouleme.fr>     +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/02/05 17:28:35 by mbatty            #+#    #+#             */
-/*   Updated: 2026/02/06 12:59:00 by mbatty           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #pragma once
 
 #include <arpa/inet.h>
@@ -47,7 +35,8 @@ class	Server
 		Server() {}
 		~Server() {}
 
-		void	open(int port);
+		/* Opens server, returns the port on wich the server is running */
+		int		open(int port = 0);
 		void	close();
 		void	update();
 

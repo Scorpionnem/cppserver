@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Packet.hpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mbatty <mbatty@student.42angouleme.fr>     +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/02/05 15:35:17 by mbatty            #+#    #+#             */
-/*   Updated: 2026/02/06 13:10:28 by mbatty           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #pragma once
 
 #include <cstdint>
@@ -28,6 +16,12 @@ struct Packet
 	};
 
 	Header	hdr;
+};
+
+enum class PacketType
+{
+	INT,
+	STRING
 };
 
 struct	IntPacket : public Packet

@@ -16,31 +16,14 @@ void	Server::update()
 	_recvClients();
 }
 
-/*
-IntPacket	*intPacketMaker(int fd)
-{
-	IntPacket	*res = new IntPacket();
-
-	ssize_t	intPacketSize = sizeof(IntPacket) - sizeof(Packet::Header);
-	ssize_t	size = recv(fd, reinterpret_cast<char*>(res) + sizeof(Packet::Header), intPacketSize, 0);
-	if (size != intPacketSize)
-	{
-		std::cerr << "Invalid intpacket received" << std::endl;
-		delete res;
-		return (NULL);
-	}
-	return (res);
-}
-*/
-
 void	Server::_processInput(Server::Client &client, Packet::Header &header)
 {
-	std::cout << "Received packet with Id: " << header.id << std::endl;
+	std::cout << "Server: received packet with ID: " << header.id << std::endl;
 
 	auto find = _packetTypes.find(header.id);
 	if (find == _packetTypes.end())
 	{
-		std::cerr << "Packet id not found" << std::endl;
+		std::cerr << "Server: packet ID not found" << std::endl;
 		return ;
 	}
 	auto	funcs = find->second;
@@ -54,7 +37,7 @@ void	Server::_processInput(Server::Client &client, Packet::Header &header)
 
 	if (size != payloadSize)
 	{
-		std::cerr << "Invalid packet payload received" << std::endl;
+		std::cerr << "Server: Invalid packet payload received" << std::endl;
 		delete fullPacket;
 		return ;
 	}
@@ -89,7 +72,7 @@ void Server::_recvClients()
 				goto skip_it;
 			}
 			if (size != sizeof(Packet::Header))
-				std::cerr << "Invalid packet header size " << size << std::endl;
+				std::cerr << "Server: invalid packet header size " << size << std::endl;
 			else
 				_processInput(client, header);
 		}
@@ -143,7 +126,7 @@ void	Server::_refreshPoll()
 	}
 }
 
-void	Server::open(int port)
+int	Server::open(int port)
 {
 	_socketFD = socket(AF_INET, SOCK_STREAM, 0);
 	if (_socketFD == -1)
@@ -168,7 +151,14 @@ void	Server::open(int port)
 		::close(_socketFD);
 		throw std::runtime_error(strerror(errno));
 	}
-	std::clog << "Server opened on " << port << std::endl;
+
+	struct sockaddr_in	addr;
+	socklen_t		size = sizeof(addr);
+	getsockname(_socketFD, (struct sockaddr*)&addr, &size);
+	port = ntohs(addr.sin_port);
+
+	std::cerr << "Server: running on port: " << port << std::endl;
+	return (port);
 }
 
 void	Server::close()

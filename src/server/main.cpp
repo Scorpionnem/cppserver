@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mbatty <mbatty@student.42angouleme.fr>     +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/02/05 15:27:57 by mbatty            #+#    #+#             */
-/*   Updated: 2026/02/06 13:09:23 by mbatty           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Packet.hpp"
 #include <iostream>
 #include <cstring>
@@ -31,33 +19,36 @@ int	main(void)
 	signal(SIGINT, handleSig);
 
 	Server	server;
-	server.setPacketType(0, IntPacket::size, IntPacket::create);
-	server.setPacketType(1, StringPacket::size, StringPacket::create);
 	server.setConnectCallback([]
 		(const Server::Client &client)
 		{
-			(void)client;
+			std::cout << "client connected: " << client.fd() << std::endl;
 		});
 	server.setDisconnectCallback([]
 		(const Server::Client &client)
 		{
-			(void)client;
+			std::cout << "client disconnected: " << client.fd() << std::endl;
 		});
 	server.setMessageCallback([&server]
 		(const Server::Client &client, Packet *packet)
 		{
 			(void)server;(void)client;
-			if (packet->hdr.id == 0)
+			if (static_cast<PacketType>(packet->hdr.id) == PacketType::INT)
 			{
 				IntPacket	*pckt = (IntPacket*)packet;
+
 				std::cout << pckt->v << std::endl;
 			}
-			if (packet->hdr.id == 1)
+			if (static_cast<PacketType>(packet->hdr.id) == PacketType::STRING)
 			{
 				StringPacket	*pckt = (StringPacket*)packet;
+
 				std::cout << pckt->msg << std::endl;
 			}
 		});
+
+	server.setPacketType(static_cast<int>(PacketType::INT), IntPacket::size, IntPacket::create);
+	server.setPacketType(static_cast<int>(PacketType::STRING), StringPacket::size, StringPacket::create);
 
 	try {
 		server.open(6942);
